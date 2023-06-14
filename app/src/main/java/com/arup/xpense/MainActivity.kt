@@ -17,10 +17,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material3.BottomAppBar
+import androidx.compose.material3.BottomAppBarDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
@@ -78,12 +82,22 @@ class MainActivity : ComponentActivity() {
                     }
 
 
-                    Box(modifier = Modifier) {
-                        BottomSheet(db, onClose = {
-                            list.clear()
-                            list.addAll(getThisMonthData())
-                        })
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize(),
+                            verticalArrangement = Arrangement.Bottom
+                        ) {
+                            NavigationBar(db, onClose = {
+                                list.clear()
+                                list.addAll(getThisMonthData())
+                            })
+                        }
                     }
+
                 }
             }
         }
@@ -176,25 +190,17 @@ fun BottomSheet(db: DBHandler? = null, onClose: () -> Unit) {
     ) {
         Column(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.Bottom,
+                .fillMaxSize(),
             horizontalAlignment = Alignment.End
         ) {
-            Box(
-                modifier = Modifier,
-                contentAlignment = Alignment.BottomEnd
-            ) {
-                FloatingActionButton(
-                    onClick = {
-                        bottomSheetVisible = true
-                    },
-                    containerColor = MaterialTheme.colorScheme.secondary,
-                    shape = RoundedCornerShape(16.dp),
-
-                    ) {
-                    Icon(Icons.Filled.Add, contentDescription = "Add")
-                }
+            FloatingActionButton(
+                onClick = {
+                    bottomSheetVisible = true
+                },
+                shape = RoundedCornerShape(16.dp),
+                containerColor = BottomAppBarDefaults.bottomAppBarFabColor
+                ) {
+                Icon(Icons.Filled.Add, contentDescription = "Add")
             }
         }
     }
@@ -275,8 +281,25 @@ fun MTextField(
 }
 
 @Composable
+fun NavigationBar(db: DBHandler?, onClose: () -> Unit) {
+    BottomAppBar(
+        actions = {
+            IconButton(onClick = { /* doSomething() */ }) {
+                Icon(
+                    Icons.Filled.FilterList,
+                    contentDescription = "Localized description",
+                )
+            }
+        },
+        floatingActionButton = {
+            BottomSheet(db) { onClose() }
+        }
+    )
+}
+
+@Composable
 @Preview(showBackground = true)
-fun Preview() {
+fun PreviewCard() {
     TransactionCard(data = TransactionModel(
         0,
         "Milk",
@@ -288,6 +311,8 @@ fun Preview() {
 
 @Preview
 @Composable
-fun PreviewModalDrawerSheet() {
-    BottomSheet(null, onClose = {})
+fun PreviewNavigationBar() {
+    NavigationBar(null) {
+
+    }
 }
