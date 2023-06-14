@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">Xpense</string>
+    <string name="title_activity_add">AddActivity</string>
+</resources>
