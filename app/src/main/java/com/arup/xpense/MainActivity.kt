@@ -1,5 +1,6 @@
 package com.arup.xpense
 
+import android.annotation.SuppressLint
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -41,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import com.arup.xpense.ui.theme.XpenseTheme
 import kotlinx.coroutines.launch
 import models.TransactionModel
+import java.text.SimpleDateFormat
 import java.util.Date
 
 
@@ -52,7 +54,7 @@ class MainActivity : ComponentActivity() {
 
         val list = mutableStateListOf<TransactionModel>()
 
-        list.addAll(db.readTransactions())
+        list.addAll(getThisMonthData())
 
         setContent {
             XpenseTheme {
@@ -60,11 +62,18 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    LazyColumn(
-                        modifier = Modifier
-                    ) {
-                        items(list) { transaction ->
-                            TransactionCard(data = transaction)
+                    Column {
+                        Box(modifier = Modifier) {
+                            Title(text = "This Month")
+                        }
+                        Box(modifier = Modifier) {
+                            LazyColumn(
+                                modifier = Modifier
+                            ) {
+                                items(list) { transaction ->
+                                    TransactionCard(data = transaction)
+                                }
+                            }
                         }
                     }
 
@@ -72,12 +81,35 @@ class MainActivity : ComponentActivity() {
                     Box(modifier = Modifier) {
                         BottomSheet(db, onClose = {
                             list.clear()
-                            list.addAll(db.readTransactions())
+                            list.addAll(getThisMonthData())
                         })
                     }
                 }
             }
         }
+    }
+
+    @SuppressLint("SimpleDateFormat")
+    private fun getThisMonthData(): List<TransactionModel> { //Not Optimized
+        val date = Date(getCurrentDateTime())
+        val sdf = SimpleDateFormat("MM/yyyy")
+        val str = sdf.format(date)
+
+        return db.readTransactions(fromTime = sdf.parse(str)?.let { getTimeToLong(it) })
+    }
+
+    @SuppressLint("SimpleDateFormat")
+    private fun getThisYearData(): List<TransactionModel> { // Not Optimized
+        val sdf = SimpleDateFormat("yyyy")
+        val str = sdf.format(Date(getCurrentDateTime()))
+        return db.readTransactions(fromTime = sdf.parse(str)?.let { getTimeToLong(it) })
+    }
+
+    private fun getCurrentDateTime(): Long {
+        return System.currentTimeMillis()
+    }
+    private fun getTimeToLong(date: Date): Long {
+        return date.time
     }
 }
 
@@ -88,7 +120,8 @@ fun TransactionCard(data: TransactionModel) {
 
     Surface(
         shape = MaterialTheme.shapes.medium,
-        modifier = Modifier.padding(4.dp),
+        modifier = Modifier
+            .padding(start = 8.dp, end = 8.dp, bottom = 4.dp, top = 4.dp),
         color = MaterialTheme.colorScheme.secondary
     ) {
         Column(
@@ -207,6 +240,15 @@ fun BottomSheet(db: DBHandler? = null, onClose: () -> Unit) {
 }
 
 @Composable
+fun Title(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.headlineMedium,
+        modifier = Modifier.padding(18.dp)
+    )
+}
+
+@Composable
 fun MTextField(
     keyboardType : KeyboardType = KeyboardType.Text,
     value: String?,
@@ -215,7 +257,9 @@ fun MTextField(
 ) {
     val pad = 4.dp
     Box(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+        ,
         contentAlignment = Alignment.Center
     ) {
         OutlinedTextField(
@@ -245,7 +289,5 @@ fun Preview() {
 @Preview
 @Composable
 fun PreviewModalDrawerSheet() {
-    BottomSheet(null, onClose = {
-
-    })
+    BottomSheet(null, onClose = {})
 }
