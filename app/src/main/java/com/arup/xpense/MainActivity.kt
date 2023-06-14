@@ -4,6 +4,8 @@ import android.annotation.SuppressLint
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.animation.Crossfade
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,6 +23,9 @@ import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.BottomAppBarDefaults
 import androidx.compose.material3.Button
+import androidx.compose.material3.DateRangePicker
+import androidx.compose.material3.DateRangePickerState
+import androidx.compose.material3.DisplayMode
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -30,8 +35,10 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberDateRangePickerState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -52,6 +59,7 @@ import java.util.Date
 
 class MainActivity : ComponentActivity() {
     private lateinit var db: DBHandler
+    @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         db = DBHandler(this)
@@ -81,21 +89,22 @@ class MainActivity : ComponentActivity() {
                         }
                     }
 
-
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
                     ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxSize(),
-                            verticalArrangement = Arrangement.Bottom
-                        ) {
-                            NavigationBar(db, onClose = {
-                                list.clear()
-                                list.addAll(getThisMonthData())
-                            })
-                        }
+                        NavigationBar(db, onClose = {
+                            list.clear()
+                            list.addAll(getThisMonthData())
+                        }, onFilterClick = {state, fromAmount, toAmount ->
+                            list.clear()
+                            list.addAll(db.readTransactions(
+                                minimumAmount = fromAmount,
+                                maximumAmount = toAmount,
+                                fromTime = state.selectedStartDateMillis,
+                                toTime = state.selectedEndDateMillis
+                            ))
+                        })
                     }
 
                 }
@@ -112,12 +121,12 @@ class MainActivity : ComponentActivity() {
         return db.readTransactions(fromTime = sdf.parse(str)?.let { getTimeToLong(it) })
     }
 
-    @SuppressLint("SimpleDateFormat")
-    private fun getThisYearData(): List<TransactionModel> { // Not Optimized
-        val sdf = SimpleDateFormat("yyyy")
-        val str = sdf.format(Date(getCurrentDateTime()))
-        return db.readTransactions(fromTime = sdf.parse(str)?.let { getTimeToLong(it) })
-    }
+//    @SuppressLint("SimpleDateFormat")
+//    private fun getThisYearData(): List<TransactionModel> { // Not Optimized
+//        val sdf = SimpleDateFormat("yyyy")
+//        val str = sdf.format(Date(getCurrentDateTime()))
+//        return db.readTransactions(fromTime = sdf.parse(str)?.let { getTimeToLong(it) })
+//    }
 
     private fun getCurrentDateTime(): Long {
         return System.currentTimeMillis()
@@ -280,22 +289,92 @@ fun MTextField(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NavigationBar(db: DBHandler?, onClose: () -> Unit) {
-    BottomAppBar(
-        actions = {
-            IconButton(onClick = { /* doSomething() */ }) {
-                Icon(
-                    Icons.Filled.FilterList,
-                    contentDescription = "Localized description",
+fun NavigationBar(db: DBHandler?, onClose: () -> Unit, onFilterClick: (state: DateRangePickerState, fromAmount: Int, toAmount: Int) -> Unit) {
+    var dialogState by remember { mutableStateOf(false) }
+
+    val state = rememberDateRangePickerState(initialDisplayMode = DisplayMode.Input)
+    val fromAmountState = remember { mutableStateOf("") }
+    val toAmountState = remember { mutableStateOf("") }
+
+    val inputModifier = remember { Modifier.padding(4.dp) }
+
+    @Composable
+    fun FilterDialog(
+        state: DateRangePickerState,
+        fromAmountState: MutableState<String>,
+        toAmountState: MutableState<String>,
+        onFilterClick: () -> Unit
+    ) {
+        Column(modifier = Modifier.padding(18.dp)) {
+            DateRangePicker(state = state, modifier = Modifier)
+
+            Row(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
+                OutlinedTextField(
+                    value = fromAmountState.value,
+                    modifier = inputModifier.weight(1f),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    onValueChange = { fromAmountState.value = it }
+                )
+
+                OutlinedTextField(
+                    value = toAmountState.value,
+                    modifier = inputModifier.weight(1f),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    onValueChange = { toAmountState.value = it }
                 )
             }
-        },
-        floatingActionButton = {
-            BottomSheet(db) { onClose() }
+
+            Button(
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                onClick = { onFilterClick() }
+            ) {
+                Text(text = "Filter")
+            }
         }
-    )
+    }
+
+    Box(
+        modifier = Modifier
+            .background(MaterialTheme.colorScheme.background)
+            .padding(8.dp)
+    ) {
+        Crossfade(targetState = dialogState) { showDialog ->
+            if (showDialog) {
+                FilterDialog(
+                    state = state,
+                    fromAmountState = fromAmountState,
+                    toAmountState = toAmountState,
+                    onFilterClick = { onFilterClick(state, Integer.parseInt(fromAmountState.value), Integer.parseInt(toAmountState.value)) }
+                )
+            }
+        }
+    }
+
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.Bottom
+    ) {
+        BottomAppBar(
+            actions = {
+                IconButton(onClick = {
+                    dialogState = true
+                }) {
+                    Icon(
+                        Icons.Filled.FilterList,
+                        contentDescription = "Localized description",
+                    )
+                }
+            },
+            floatingActionButton = {
+                BottomSheet(db) { onClose() }
+            }
+        )
+    }
 }
+
+
 
 @Composable
 @Preview(showBackground = true)
@@ -309,10 +388,9 @@ fun PreviewCard() {
     ))
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Composable
 fun PreviewNavigationBar() {
-    NavigationBar(null) {
-
-    }
+    NavigationBar(null, onClose = {}, onFilterClick = {_, _, _ -> })
 }
