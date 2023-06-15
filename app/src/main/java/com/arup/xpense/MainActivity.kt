@@ -145,7 +145,7 @@ fun TransactionCard(data: TransactionModel) {
         shape = MaterialTheme.shapes.medium,
         modifier = Modifier
             .padding(start = 8.dp, end = 8.dp, bottom = 4.dp, top = 4.dp),
-        color = MaterialTheme.colorScheme.secondary
+        color = MaterialTheme.colorScheme.primaryContainer
     ) {
         Column(
             modifier = Modifier.padding(16.dp)
@@ -208,7 +208,7 @@ fun BottomSheet(db: DBHandler? = null, onClose: () -> Unit) {
                 },
                 shape = RoundedCornerShape(16.dp),
                 containerColor = BottomAppBarDefaults.bottomAppBarFabColor
-                ) {
+            ) {
                 Icon(Icons.Filled.Add, contentDescription = "Add")
             }
         }
@@ -237,16 +237,16 @@ fun BottomSheet(db: DBHandler? = null, onClose: () -> Unit) {
                         .fillMaxWidth()
                         .padding(top = 8.dp),
                     onClick = {
-                    db?.addNewTransaction(title, amount.toIntOrNull() ?: 0, note)
-                    scope.launch {
-                        bottomSheetState.hide()
-                        onClose()
-                    }.invokeOnCompletion {
-                        if (!bottomSheetState.isVisible) {
-                            bottomSheetVisible = false
+                        db?.addNewTransaction(title, amount.toIntOrNull() ?: 0, note)
+                        scope.launch {
+                            bottomSheetState.hide()
+                            onClose()
+                        }.invokeOnCompletion {
+                            if (!bottomSheetState.isVisible) {
+                                bottomSheetVisible = false
+                            }
                         }
-                    }
-                }) {
+                    }) {
                     Text(text = "Submit")
                 }
             }
@@ -295,8 +295,8 @@ fun NavigationBar(db: DBHandler?, onClose: () -> Unit, onFilterClick: (state: Da
     var dialogState by remember { mutableStateOf(false) }
 
     val state = rememberDateRangePickerState(initialDisplayMode = DisplayMode.Input)
-    val fromAmountState = remember { mutableStateOf("") }
-    val toAmountState = remember { mutableStateOf("") }
+    val fromAmountState = remember { mutableStateOf("0") }
+    val toAmountState = remember { mutableStateOf("0") }
 
     val inputModifier = remember { Modifier.padding(4.dp) }
 
@@ -307,38 +307,53 @@ fun NavigationBar(db: DBHandler?, onClose: () -> Unit, onFilterClick: (state: Da
         toAmountState: MutableState<String>,
         onFilterClick: () -> Unit
     ) {
-        Column(modifier = Modifier.padding(18.dp)) {
-            DateRangePicker(state = state, modifier = Modifier)
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
 
-            Row(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
-                OutlinedTextField(
-                    value = fromAmountState.value,
-                    modifier = inputModifier.weight(1f),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    onValueChange = { fromAmountState.value = it }
-                )
+            Column(
+                modifier = Modifier
+                    .padding(18.dp)
+                    .background(
+                        color = MaterialTheme.colorScheme.secondaryContainer,
+                        shape = RoundedCornerShape(8.dp)
+                    ),
 
-                OutlinedTextField(
-                    value = toAmountState.value,
-                    modifier = inputModifier.weight(1f),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    onValueChange = { toAmountState.value = it }
-                )
-            }
+                ) {
+                DateRangePicker(state = state, modifier = Modifier.padding(12.dp))
 
-            Button(
-                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                onClick = { onFilterClick() }
-            ) {
-                Text(text = "Filter")
+                Row(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
+                    OutlinedTextField(
+                        value = fromAmountState.value,
+                        modifier = inputModifier.weight(1f),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        onValueChange = { fromAmountState.value = it }
+                    )
+
+                    OutlinedTextField(
+                        value = toAmountState.value,
+                        modifier = inputModifier.weight(1f),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        onValueChange = { toAmountState.value = it }
+                    )
+                }
+
+                Button(
+                    modifier = Modifier.fillMaxWidth().padding(12.dp),
+                    onClick = {
+                        onFilterClick()
+                        dialogState = false
+                    }
+                ) {
+                    Text(text = "Filter")
+                }
             }
         }
     }
 
     Box(
         modifier = Modifier
-            .background(MaterialTheme.colorScheme.background)
-            .padding(8.dp)
     ) {
         Crossfade(targetState = dialogState) { showDialog ->
             if (showDialog) {
@@ -346,7 +361,12 @@ fun NavigationBar(db: DBHandler?, onClose: () -> Unit, onFilterClick: (state: Da
                     state = state,
                     fromAmountState = fromAmountState,
                     toAmountState = toAmountState,
-                    onFilterClick = { onFilterClick(state, Integer.parseInt(fromAmountState.value), Integer.parseInt(toAmountState.value)) }
+                    onFilterClick = {
+                        onFilterClick(
+                            state,
+                            Integer.parseInt(fromAmountState.value),
+                            Integer.parseInt(toAmountState.value))
+                    }
                 )
             }
         }
