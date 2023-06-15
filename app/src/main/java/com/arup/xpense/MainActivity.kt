@@ -65,6 +65,7 @@ class MainActivity : ComponentActivity() {
         db = DBHandler(this)
 
         val list = mutableStateListOf<TransactionModel>()
+        val title = mutableStateOf("This Month")
 
         list.addAll(getThisMonthData())
 
@@ -76,7 +77,7 @@ class MainActivity : ComponentActivity() {
                 ) {
                     Column {
                         Box(modifier = Modifier) {
-                            Title(text = "This Month")
+                            Title(text = title.value)
                         }
                         Box(modifier = Modifier) {
                             LazyColumn(
@@ -97,10 +98,24 @@ class MainActivity : ComponentActivity() {
                             list.clear()
                             list.addAll(getThisMonthData())
                         }, onFilterClick = {state, fromAmount, toAmount ->
+                            title.value = "Filter"
+                            val fromAmountInt = try {
+                                Integer.parseInt(fromAmount)
+                            }
+                            catch(e: Exception) {
+                                0
+                            }
+
+                            val toAmountInt = try {
+                                Integer.parseInt(toAmount)
+                            }
+                            catch(e: Exception) {
+                                Integer.MAX_VALUE
+                            }
                             list.clear()
                             list.addAll(db.readTransactions(
-                                minimumAmount = fromAmount,
-                                maximumAmount = toAmount,
+                                minimumAmount = fromAmountInt,
+                                maximumAmount = toAmountInt,
                                 fromTime = state.selectedStartDateMillis,
                                 toTime = state.selectedEndDateMillis
                             ))
@@ -259,7 +274,7 @@ fun Title(text: String) {
     Text(
         text = text,
         style = MaterialTheme.typography.headlineMedium,
-        modifier = Modifier.padding(18.dp)
+        modifier = Modifier.padding(18.dp),
     )
 }
 
@@ -291,12 +306,12 @@ fun MTextField(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NavigationBar(db: DBHandler?, onClose: () -> Unit, onFilterClick: (state: DateRangePickerState, fromAmount: Int, toAmount: Int) -> Unit) {
+fun NavigationBar(db: DBHandler?, onClose: () -> Unit, onFilterClick: (state: DateRangePickerState, fromAmount: String, toAmount: String) -> Unit) {
     var dialogState by remember { mutableStateOf(false) }
 
     val state = rememberDateRangePickerState(initialDisplayMode = DisplayMode.Input)
-    val fromAmountState = remember { mutableStateOf("0") }
-    val toAmountState = remember { mutableStateOf("0") }
+    val fromAmountState = remember { mutableStateOf("") }
+    val toAmountState = remember { mutableStateOf("") }
 
     val inputModifier = remember { Modifier.padding(4.dp) }
 
@@ -323,7 +338,9 @@ fun NavigationBar(db: DBHandler?, onClose: () -> Unit, onFilterClick: (state: Da
                 ) {
                 DateRangePicker(state = state, modifier = Modifier.padding(12.dp))
 
-                Row(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
+                Row(modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp)) {
                     OutlinedTextField(
                         value = fromAmountState.value,
                         modifier = inputModifier.weight(1f),
@@ -340,7 +357,9 @@ fun NavigationBar(db: DBHandler?, onClose: () -> Unit, onFilterClick: (state: Da
                 }
 
                 Button(
-                    modifier = Modifier.fillMaxWidth().padding(12.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(12.dp),
                     onClick = {
                         onFilterClick()
                         dialogState = false
@@ -364,8 +383,9 @@ fun NavigationBar(db: DBHandler?, onClose: () -> Unit, onFilterClick: (state: Da
                     onFilterClick = {
                         onFilterClick(
                             state,
-                            Integer.parseInt(fromAmountState.value),
-                            Integer.parseInt(toAmountState.value))
+                            fromAmountState.value,
+                            toAmountState.value
+                        )
                     }
                 )
             }
