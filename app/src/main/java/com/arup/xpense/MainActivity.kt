@@ -236,7 +236,7 @@ fun BottomSheet(db: DBHandler? = null, onClose: () -> Unit) {
             modifier = Modifier,
             onDismissRequest = { bottomSheetVisible = false },
             sheetState = bottomSheetState,
-            containerColor = MaterialTheme.colorScheme.primaryContainer
+            containerColor = BottomAppBarDefaults.containerColor
         ) {
             var title by remember { mutableStateOf("") }
             var amount by remember { mutableStateOf("") }
@@ -327,24 +327,32 @@ fun NavigationBar(db: DBHandler?, onClose: () -> Unit, onFilterClick: (state: Da
         if (dialogState) {
             AlertDialog(
                 onDismissRequest = { dialogState = false },
-                modifier = Modifier
-                    .background(AlertDialogDefaults.containerColor),
+                modifier = Modifier.background(
+                    AlertDialogDefaults.containerColor,
+                    shape = RoundedCornerShape(12.dp)
+                ),
                 content = {
                     Column(modifier = Modifier.padding(18.dp)) {
                         DateRangePicker(state = state, modifier = Modifier)
-                        Row(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
+                        Row(modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp)) {
                             OutlinedTextField(
                                 value = fromAmountState.value,
                                 modifier = inputModifier.weight(1f),
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                onValueChange = { fromAmountState.value = it }
+                                onValueChange = { fromAmountState.value = it },
+                                placeholder = { Text(text = "Min Amount")},
+                                singleLine = true
                             )
 
                             OutlinedTextField(
                                 value = toAmountState.value,
                                 modifier = inputModifier.weight(1f),
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                onValueChange = { toAmountState.value = it }
+                                onValueChange = { toAmountState.value = it },
+                                placeholder = { Text(text = "Max Amount")},
+                                singleLine = true
                             )
                         }
                         Button(
@@ -360,6 +368,7 @@ fun NavigationBar(db: DBHandler?, onClose: () -> Unit, onFilterClick: (state: Da
                         }
                     }
                 }
+
             )
         }
     }

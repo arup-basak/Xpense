@@ -95,8 +95,6 @@ class DBHandler(context: Context) :
         }
     }
 
-
-
     private fun getCurrentDateTime(): Long {
         return System.currentTimeMillis()
     }
