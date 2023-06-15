@@ -186,7 +186,7 @@ fun TransactionCard(data: TransactionModel) {
 
             Text(
                 text = date.toString(),
-                style = MaterialTheme.typography.labelSmall,
+                style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier.padding(bottom = 4.dp)
             )
             Text(
@@ -234,7 +234,7 @@ fun BottomSheet(db: DBHandler? = null, onClose: () -> Unit) {
             modifier = Modifier,
             onDismissRequest = { bottomSheetVisible = false },
             sheetState = bottomSheetState,
-            containerColor = MaterialTheme.colorScheme.secondary
+            containerColor = MaterialTheme.colorScheme.primaryContainer
         ) {
             var title by remember { mutableStateOf("") }
             var amount by remember { mutableStateOf("") }
@@ -298,7 +298,7 @@ fun MTextField(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = pad, bottom = pad),
-            placeholder = { Text(text = placeholder, color = MaterialTheme.colorScheme.onTertiary) },
+            placeholder = { Text(text = placeholder, color = MaterialTheme.colorScheme.onPrimaryContainer) },
             keyboardOptions = KeyboardOptions(keyboardType = keyboardType)
         )
     }
