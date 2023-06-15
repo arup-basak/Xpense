@@ -20,6 +20,8 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.AlertDialogDefaults
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.BottomAppBarDefaults
 import androidx.compose.material3.Button
@@ -34,8 +36,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDateRangePickerState
+import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
@@ -322,52 +324,43 @@ fun NavigationBar(db: DBHandler?, onClose: () -> Unit, onFilterClick: (state: Da
         toAmountState: MutableState<String>,
         onFilterClick: () -> Unit
     ) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-
-            Column(
+        if (dialogState) {
+            AlertDialog(
+                onDismissRequest = { dialogState = false },
                 modifier = Modifier
-                    .padding(18.dp)
-                    .background(
-                        color = MaterialTheme.colorScheme.secondaryContainer,
-                        shape = RoundedCornerShape(8.dp)
-                    ),
+                    .background(AlertDialogDefaults.containerColor),
+                content = {
+                    Column(modifier = Modifier.padding(18.dp)) {
+                        DateRangePicker(state = state, modifier = Modifier)
+                        Row(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
+                            OutlinedTextField(
+                                value = fromAmountState.value,
+                                modifier = inputModifier.weight(1f),
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                onValueChange = { fromAmountState.value = it }
+                            )
 
-                ) {
-                DateRangePicker(state = state, modifier = Modifier.padding(12.dp))
-
-                Row(modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(8.dp)) {
-                    OutlinedTextField(
-                        value = fromAmountState.value,
-                        modifier = inputModifier.weight(1f),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        onValueChange = { fromAmountState.value = it }
-                    )
-
-                    OutlinedTextField(
-                        value = toAmountState.value,
-                        modifier = inputModifier.weight(1f),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        onValueChange = { toAmountState.value = it }
-                    )
-                }
-
-                Button(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(12.dp),
-                    onClick = {
-                        onFilterClick()
-                        dialogState = false
+                            OutlinedTextField(
+                                value = toAmountState.value,
+                                modifier = inputModifier.weight(1f),
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                onValueChange = { toAmountState.value = it }
+                            )
+                        }
+                        Button(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(12.dp),
+                            onClick = {
+                                onFilterClick()
+                                dialogState = false
+                            }
+                        ) {
+                            Text(text = "Filter")
+                        }
                     }
-                ) {
-                    Text(text = "Filter")
                 }
-            }
+            )
         }
     }
 
